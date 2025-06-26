@@ -1,3 +1,5 @@
 MVP_PLAN.md
 # Environment variables
 backend/.env
+# Milvus data
+milvus_data/

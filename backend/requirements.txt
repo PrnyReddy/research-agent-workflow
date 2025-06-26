@@ -5,3 +5,9 @@ requests
 beautifulsoup4
 alpha_vantage
 newsapi-python
+# LangChain and Vector DB
+langchain
+milvus
+pymilvus
+sentence-transformers
+langchain-openai
