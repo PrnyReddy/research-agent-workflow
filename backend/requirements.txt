@@ -3,3 +3,4 @@ uvicorn[standard]
 python-dotenv
 requests
 beautifulsoup4
+alpha_vantage
