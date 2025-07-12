@@ -1,47 +1,36 @@
-# Multi-Agent AI Research Platform
+# Multi‑Agent AI Research Platform
 
-## Overview
+A full‑stack, cloud‑ready research tool with:
 
-A production-ready, cloud-native research platform with a modular backend (AWS Lambda-ready) and a contemporary, elegant frontend built with Next.js and Material UI.
+- **Frontend:** Next.js + Material UI  
+- **Backend:** FastAPI (local) / AWS Lambda‑ready (pending)  
+- **Vector DB:** Elasticsearch  
+- **Agents:** LangGraph orchestrating Researcher → Analyst → Report Writer  
+- **Tools:** Financial API, News API, Web Scraper, Internal Docs Search  
 
-## Features
+---
 
-- **Elegant UI/UX:** Responsive, accessible, and visually harmonious interface using Material UI and custom theming.
-- **Advanced Interactivity:** Tooltips, transitions, and Snackbar feedback for all user actions.
-- **Accessibility:** Keyboard navigation, focus states, and ARIA labels for forms.
-- **Cloud-Native Backend:** Stateless Lambda handler, modular tools, resilient error handling.
-- **Best Practices:** Modern code structure, separation of concerns, scalable architecture.
+## MVP: Automated Market Research Analyst
 
-## UI/UX Highlights
+**Use Case:** Generate a competitive analysis report comparing two companies using internal documents + public data.
 
-- **Material UI Theme:** Custom palette, typography, and spacing for a professional look.
-- **Responsive Layout:** Grid-based design adapts to all screen sizes.
-- **Feedback:** Snackbar and alerts for uploads, errors, and agent outputs.
-- **Accessibility:** All interactive elements have clear focus and accessible labels.
+### Workflow
 
-## Deployment
+1. **Receive Request**  
+   User submits “Compare Company A vs. Company B” via the frontend.
 
-See [`DEPLOYMENT.md`](DEPLOYMENT.md:1) for AWS Lambda setup and cloud integration.
+2. **Plan Data Collection**  
+   **Planner Agent** defines which sources to hit.
 
-## Interview Readiness
+3. **Retrieve Data**  
+   **Retriever Agent** pulls from:  
+   - **Internal Docs:** Elasticsearch vector search over PDFs, DOCX, etc.  
+   - **Financial APIs:** 
+   - **News APIs:**
+   - **Web Scraper:** Official websites via Beautiful Soup  
 
-- **Architecture:** Modular, maintainable, and cloud-ready.
-- **Documentation:** Comprehensive guides for deployment and usage.
-- **Code Quality:** Follows contemporary standards for frontend and backend.
+4. **Synthesize Insights**  
+   Combine all fetched data into a single context.
 
-## Getting Started
-
-1. Install dependencies:
-   ```
-   npm install
-   pip install -r backend/requirements.txt
-   ```
-2. Run frontend:
-   ```
-   npm run dev
-   ```
-3. Deploy backend to AWS Lambda as per [`DEPLOYMENT.md`](DEPLOYMENT.md:1).
-
-## License
-
-MIT
+5. **Generate Report**  
+   **Executor Agent** produces a structured Markdown report.
