@@ -1,13 +1,15 @@
+version: '3.8'
 services:
-  milvus:
-    image: milvusdb/milvus:v2.5.13
-    container_name: milvus_standalone
-    ports:
-      - "19530:19530" 
-      - "9091:9091"   
-    volumes:
-      - ./milvus_data:/var/lib/milvus
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.0
+    container_name: elasticsearch
     environment:
-      - "ETCD_USE_EMBED=true"
-      - "ETCD_DATA_DIR=/var/lib/milvus/etcd"
-      - "COMMON_STORAGETYPE=local"
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+    ports:
+      - "9200:9200"
+    volumes:
+      - ./es_data:/usr/share/elasticsearch/data
+
+volumes:
+  es_data:

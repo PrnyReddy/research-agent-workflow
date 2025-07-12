@@ -6,9 +6,14 @@ load_dotenv()
 
 API_KEY = os.getenv("ALPHA_VANTAGE_API_KEY")
 
+class FinancialAPIError(Exception):
+    pass
+
 def get_financial_data(company_symbol: str) -> dict:
     """
     Fetches key financial metrics for a given company symbol using Alpha Vantage.
+    Returns:
+        dict: filtered financial data or {"error": str}
     """
     if not API_KEY:
         return {"error": "Alpha Vantage API key not found."}
@@ -16,10 +21,8 @@ def get_financial_data(company_symbol: str) -> dict:
     try:
         fd = FundamentalData(key=API_KEY, output_format='json')
         data, _ = fd.get_company_overview(symbol=company_symbol)
-        
         if not data:
             return {"error": f"No data found for symbol {company_symbol}"}
-
         filtered_data = {
             "Symbol": data.get("Symbol"),
             "AssetType": data.get("AssetType"),
@@ -37,4 +40,4 @@ def get_financial_data(company_symbol: str) -> dict:
         }
         return filtered_data
     except Exception as e:
-        return {"error": f"An error occurred while fetching financial data: {e}"}
+        return {"error": f"FinancialAPIError: {e}"}
