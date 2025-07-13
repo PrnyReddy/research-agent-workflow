@@ -1,36 +1,47 @@
-# Multi‑Agent AI Research Platform
+# Multi-Agent AI Research Platform
 
-A full‑stack, cloud‑ready research tool with:
+## Overview
 
-- **Frontend:** Next.js + Material UI  
-- **Backend:** FastAPI (local) / AWS Lambda‑ready (pending)  
-- **Vector DB:** Elasticsearch  
-- **Agents:** LangGraph orchestrating Researcher → Analyst → Report Writer  
-- **Tools:** Financial API, News API, Web Scraper, Internal Docs Search  
+This project automates market research workflows using a multi-agent system. It retrieves data from various sources, synthesizes insights, and generates structured reports.
 
 ---
 
-## MVP: Automated Market Research Analyst
+## Features
 
-**Use Case:** Generate a competitive analysis report comparing two companies using internal documents + public data.
+- **Frontend:** Built with Next.js and Material UI for task submission and real-time updates.
+- **Backend:** FastAPI with AWS Lambda compatibility for scalable execution.
+- **Tools:**  
+  - Financial data retrieval  
+  - News aggregation  
+  - Website content scraping  
+  - Internal document search  
 
-### Workflow
+---
 
-1. **Receive Request**  
-   User submits “Compare Company A vs. Company B” via the frontend.
+## Development Setup
 
-2. **Plan Data Collection**  
-   **Planner Agent** defines which sources to hit.
+- Use `docker-compose` to set up Elasticsearch locally for vector database functionality.
 
-3. **Retrieve Data**  
-   **Retriever Agent** pulls from:  
-   - **Internal Docs:** Elasticsearch vector search over PDFs, DOCX, etc.  
-   - **Financial APIs:** 
-   - **News APIs:**
-   - **Web Scraper:** Official websites via Beautiful Soup  
+---
 
-4. **Synthesize Insights**  
-   Combine all fetched data into a single context.
+## How to Run
 
-5. **Generate Report**  
-   **Executor Agent** produces a structured Markdown report.
+1. Clone the repository.
+2. Set up the environment using `docker-compose`.
+3. Start the FastAPI backend and Next.js frontend.
+4. Submit research tasks via the frontend.
+
+---
+
+## Technologies Used
+
+- **Frontend:** Next.js, Material UI  
+- **Backend:** FastAPI, Elasticsearch  
+- **Other Tools:** Beautiful Soup, PyPDF2, Python-docx  
+
+---
+
+## Future Enhancements
+
+- Add support for more data sources.
+- Optimize cloud deployment.
