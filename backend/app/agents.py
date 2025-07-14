@@ -2,7 +2,6 @@ import os
 import json
 import re
 from typing import TypedDict, List, Dict, Any, Optional, Union
-from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.agents import Tool
 from langchain.tools import StructuredTool
 from langgraph.graph import StateGraph, END
@@ -11,11 +10,12 @@ from dotenv import load_dotenv
 from .tools.financial_api import get_financial_data
 from .tools.news_api import get_news_articles
 from .tools.web_scraper import scrape_website
+from .tools.enhanced_scraper import scrape_website_enhanced
 from .vector_store import VectorStore
+from .llm_manager import llm_manager
 
 load_dotenv()
 
-llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0)
 vector_store = VectorStore()
 
 def search_internal_documents(query: str) -> Dict[str, Any]:
@@ -35,6 +35,7 @@ tools = [
         description="Fetch recent news articles about a company or topic."
     ),
     Tool(name="WebScraperTool", func=scrape_website, description="Scrape text content from a website."),
+    Tool(name="EnhancedWebScraperTool", func=scrape_website_enhanced, description="Enhanced web scraping with better content extraction and metadata."),
     Tool(name="InternalDocsSearchTool", func=search_internal_documents, description="Search internal documents for proprietary information."),
 ]
 tool_dict = {tool.name: tool for tool in tools}
@@ -56,9 +57,13 @@ def extract_json_from_string(s: str) -> Optional[Any]:
             print(f"JSON extraction error: {e}")
     return None
 
-def safe_invoke_llm(prompt_str: str) -> Union[str, Dict[str, Any]]:
+def safe_invoke_llm(prompt_str: str, preferred_provider: Optional[str] = None) -> Union[str, Dict[str, Any]]:
     try:
-        return llm.invoke(prompt_str)
+        result = llm_manager.invoke_with_fallback(prompt_str, preferred_provider)
+        if result["success"]:
+            return result["response"]
+        else:
+            return {"error": result.get("error", "LLM invocation failed")}
     except Exception as e:
         print(f"LLM invocation failed: {e}")
         return {"error": f"LLM invocation failed: {e}"}

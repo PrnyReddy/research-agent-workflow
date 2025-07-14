@@ -10,7 +10,6 @@ from PyPDF2 import PdfReader
 import io
 from app.agents import graph
 
-# Universal serialization utility for custom objects (e.g., AIMessage)
 def serialize_for_json(obj):
     if hasattr(obj, "content"):
         return obj.content
@@ -55,6 +54,33 @@ async def root():
 @app.get("/health")
 async def health_check():
     return {"status": "ok"}
+
+@app.get("/llm-providers")
+async def get_llm_providers():
+    """Get available LLM providers and their status."""
+    from app.llm_manager import llm_manager
+    providers = llm_manager.get_available_providers()
+    return {
+        "available_providers": providers,
+        "default_provider": llm_manager.default_provider,
+        "total_providers": len(providers)
+    }
+
+@app.get("/monitoring/stats")
+async def get_monitoring_stats():
+    """Get system monitoring statistics."""
+    from app.monitoring import monitoring
+    return monitoring.get_system_stats()
+
+@app.get("/monitoring/task/{task_id}")
+async def get_task_metrics(task_id: str):
+    """Get metrics for a specific task."""
+    from app.monitoring import monitoring
+    metrics = monitoring.get_task_metrics(task_id)
+    if metrics:
+        return metrics
+    else:
+        raise HTTPException(status_code=404, detail="Task not found")
 
 @app.post("/add-documents")
 async def add_documents(request: AddDocsRequest):

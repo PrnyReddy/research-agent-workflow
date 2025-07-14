@@ -1,7 +1,7 @@
 from langchain_elasticsearch import ElasticsearchStore
-from sentence_transformers import SentenceTransformer
 from elasticsearch import Elasticsearch
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_community.embeddings import HuggingFaceEmbeddings
 
 class VectorStore:
     """
@@ -10,7 +10,7 @@ class VectorStore:
     def __init__(self, host="localhost", port="9200"):
         self.host = host
         self.port = port
-        self.embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
+        self.embedding_model = HuggingFaceEmbeddings(model_name='all-MiniLM-L6-v2')
         self.client = Elasticsearch(f"http://{self.host}:{self.port}")
         self.text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=1000,
