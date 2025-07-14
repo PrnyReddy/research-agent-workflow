@@ -1,25 +1,25 @@
-from fastapi import FastAPI, File, UploadFile, HTTPException, Request, status
-from fastapi.responses import StreamingResponse, JSONResponse
+import logging
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.exceptions import RequestValidationError
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from pydantic import BaseModel
-from typing import List
-import asyncio
-import json
-import docx
-from PyPDF2 import PdfReader
-import io
-from app.agents import graph
+from dotenv import load_dotenv
+import os
 
-def serialize_for_json(obj):
-    if hasattr(obj, "content"):
-        return obj.content
-    if hasattr(obj, "type") and hasattr(obj, "content"):
-        return {"type": getattr(obj, "type", None), "content": obj.content}
-    if isinstance(obj, list):
-        return [serialize_for_json(item) for item in obj]
-    if isinstance(obj, dict):
-        return {k: serialize_for_json(v) for k, v in obj.items()}
-    return obj
+
+load_dotenv()
+
+class Settings(BaseModel):
+    OPENAI_API_KEY: str
+
+settings = Settings(
+    OPENAI_API_KEY=os.getenv("OPENAI_API_KEY", "")
+)
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
+logger = logging.getLogger("multiagent")
 
 app = FastAPI(
     title="Multi-Agent AI Platform",
@@ -40,122 +40,23 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-class ResearchRequest(BaseModel):
-    task: str
+# Global exception handlers
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    logger.error(f"Validation error: {exc.errors()}")
+    return JSONResponse(
+        status_code=422,
+        content={"detail": exc.errors(), "body": exc.body},
+    )
 
-class AddDocsRequest(BaseModel):
-    documents: list[str]
-    index_name: str = "research_docs"
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+    logger.error(f"HTTP error: {exc.detail}")
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail},
+    )
 
-@app.get("/")
-async def root():
-    return {"message": "Welcome to the Multi-Agent AI Platform! Use the /generate-report endpoint to start a task."}
-
-@app.get("/health")
-async def health_check():
-    return {"status": "ok"}
-
-@app.get("/llm-providers")
-async def get_llm_providers():
-    """Get available LLM providers and their status."""
-    from app.llm_manager import llm_manager
-    providers = llm_manager.get_available_providers()
-    return {
-        "available_providers": providers,
-        "default_provider": llm_manager.default_provider,
-        "total_providers": len(providers)
-    }
-
-@app.get("/monitoring/stats")
-async def get_monitoring_stats():
-    """Get system monitoring statistics."""
-    from app.monitoring import monitoring
-    return monitoring.get_system_stats()
-
-@app.get("/monitoring/task/{task_id}")
-async def get_task_metrics(task_id: str):
-    """Get metrics for a specific task."""
-    from app.monitoring import monitoring
-    metrics = monitoring.get_task_metrics(task_id)
-    if metrics:
-        return metrics
-    else:
-        raise HTTPException(status_code=404, detail="Task not found")
-
-@app.post("/add-documents")
-async def add_documents(request: AddDocsRequest):
-    from app.vector_store import VectorStore
-    vector_store = VectorStore()
-    try:
-        vector_store.add_documents(index_name=request.index_name, documents=request.documents)
-        return {"message": f"Successfully added {len(request.documents)} documents to index '{request.index_name}'."}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Failed to add documents: {str(e)}")
-
-@app.post("/upload-files")
-async def upload_files(files: List[UploadFile] = File(...)):
-    documents = []
-    try:
-        for file in files:
-            content = await file.read()
-            if file.filename.endswith(".pdf"):
-                reader = PdfReader(io.BytesIO(content))
-                text = ""
-                for page in reader.pages:
-                    text += page.extract_text()
-                documents.append(text)
-            elif file.filename.endswith(".docx"):
-                doc = docx.Document(io.BytesIO(content))
-                text = "\n".join([para.text for para in doc.paragraphs])
-                documents.append(text)
-            elif file.filename.endswith(".txt"):
-                documents.append(content.decode("utf-8"))
-
-        if documents:
-            from app.vector_store import VectorStore
-            vector_store = VectorStore()
-            vector_store.add_documents(index_name="research_docs", documents=documents)
-            return {"message": f"Successfully processed and added {len(documents)} files."}
-        else:
-            raise HTTPException(status_code=400, detail="No supported files were processed.")
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Failed to process files: {str(e)}")
-
-async def run_graph_in_background(task: str, queue: asyncio.Queue):
-    try:
-        async for event in graph.astream({"task": task}):
-            print("GRAPH EVENT:", event)
-            for key, value in event.items():
-                if key == '__end__':
-                    final_report = value.get('report', 'No report generated.')
-                    msg = f"event: end\ndata: {json.dumps(serialize_for_json({'report': final_report}))}\n\n"
-                    print("SENDING TO QUEUE:", msg)
-                    await queue.put(msg)
-                else:
-                    safe_value = serialize_for_json(value if value is not None else {})
-                    msg = f"event: update\ndata: {json.dumps({key: safe_value})}\n\n"
-                    print("SENDING TO QUEUE:", msg)
-                    await queue.put(msg)
-        await queue.put(None)
-    except Exception as e:
-        err_msg = f"event: error\ndata: {json.dumps({'error': str(e)})}\n\n"
-        print("SENDING TO QUEUE (ERROR):", err_msg)
-        await queue.put(err_msg)
-        await queue.put(None)
-
-@app.post("/generate-report")
-async def generate_report(request: ResearchRequest):
-    queue = asyncio.Queue()
-    asyncio.create_task(run_graph_in_background(request.task, queue))
-
-    async def stream_events():
-        buffer = ""
-        while True:
-            item = await queue.get()
-            if item is None:
-                break
-            if item.endswith("\n\n"):
-                yield item
-            queue.task_done()
-
-    return StreamingResponse(stream_events(), media_type="text/event-stream")
+# Import and include modular routes
+from app.routes import router as api_router
+app.include_router(api_router)

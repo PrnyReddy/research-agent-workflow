@@ -24,20 +24,23 @@ class LLMManager:
             self.providers["gemini"] = ChatGoogleGenerativeAI(
                 model="gemini-2.0-flash",
                 temperature=0,
-                google_api_key=google_api_key
+                google_api_key=google_api_key,
+                max_output_tokens=10000
             )
             
             self.providers["gemini-pro"] = ChatGoogleGenerativeAI(
                 model="gemini-1.5-pro",
                 temperature=0,
-                google_api_key=google_api_key
+                google_api_key=google_api_key,
+                max_output_tokens=4096
             )
             
         
             self.providers["gemini-flash"] = ChatGoogleGenerativeAI(
                 model="gemini-1.5-flash",
                 temperature=0,
-                google_api_key=google_api_key
+                google_api_key=google_api_key,
+                max_output_tokens=4096
             )
     
     def get_llm(self, provider: Optional[str] = None) -> Any:

@@ -1,3 +1,6 @@
+# This file should contain the VectorStore class and related vector DB utilities.
+# Move the code from app/vector_store.py here.
+
 from langchain_elasticsearch import ElasticsearchStore
 from elasticsearch import Elasticsearch
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -58,4 +61,4 @@ class VectorStore:
                 "score": score
             })
             
-        return formatted_results
+        return formatted_results 
