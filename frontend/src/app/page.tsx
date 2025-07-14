@@ -31,6 +31,9 @@ import {
   IconButton,
   Collapse,
 } from "@mui/material";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
 
 interface AgentData {
   research_data?: string[];
@@ -178,6 +181,13 @@ const AgentCard: React.FC<AgentCardProps> = ({ output, expanded, toggle }) => {
 
 const MemoizedAgentCard = React.memo(AgentCard);
 
+const TASK_TYPES = [
+  { value: "market_research", label: "Market Research" },
+  { value: "literature_review", label: "Literature Review" },
+  { value: "news_aggregation", label: "News Aggregation" },
+  { value: "custom", label: "Custom Task" },
+];
+
 export default function Home() {
   const [task, setTask] = useState("");
   const [outputs, setOutputs] = useState<AgentOutput[]>([]);
@@ -188,6 +198,8 @@ export default function Home() {
   const [files, setFiles] = useState<FileList | null>(null);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMsg, setSnackbarMsg] = useState("");
+  const [taskType, setTaskType] = useState(TASK_TYPES[0].value);
+  const [howItWorksOpen, setHowItWorksOpen] = useState(false);
 
   const toggleExpanded = (agent: string) =>
     setExpandedMap(prev => ({ ...prev, [agent]: !prev[agent] }));
@@ -336,27 +348,46 @@ const handleSubmit = async (e: FormEvent) => {
                     Start a New Research Task
                   </Typography>
                   <form onSubmit={handleSubmit}>
-                    <TextField
-                      label="Research Task"
-                      multiline
-                      minRows={5}
-                      fullWidth
-                      value={task}
-                      onChange={(e) => setTask(e.target.value)}
-                      placeholder="e.g., Compare the financial outlook for NVIDIA and AMD."
-                      variant="outlined"
-                      sx={{ mb: 2 }}
-                    />
-                    <Button
-                      type="submit"
-                      variant="contained"
-                      color="primary"
-                      disabled={isLoading}
-                      fullWidth
-                      startIcon={isLoading ? <CircularProgress size={20} /> : <Search />}
-                    >
-                      {isLoading ? "Researching..." : "Start Research"}
-                    </Button>
+                    <Grid container spacing={2} alignItems="center">
+                      <Grid item xs={12} sm={4}>
+                        {/* Task Type Dropdown */}
+                        <TextField
+                          select
+                          label="Task Type"
+                          value={taskType}
+                          onChange={e => setTaskType(e.target.value)}
+                          fullWidth
+                          SelectProps={{ native: true }}
+                        >
+                          {TASK_TYPES.map(option => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </TextField>
+                      </Grid>
+                      <Grid item xs={12} sm={8}>
+                        {/* Generic Task Input */}
+                        <TextField
+                          label="Describe your task (e.g., Compare Company A and B, Summarize recent research on X)"
+                          value={task}
+                          onChange={e => setTask(e.target.value)}
+                          fullWidth
+                          required
+                        />
+                      </Grid>
+                      <Grid item xs={12}>
+                        <Button
+                          type="submit"
+                          variant="contained"
+                          color="primary"
+                          disabled={isLoading || !task}
+                          startIcon={<Search />}
+                        >
+                          Run Agent
+                        </Button>
+                      </Grid>
+                    </Grid>
                   </form>
                 </CardContent>
               </Card>
@@ -429,6 +460,22 @@ const handleSubmit = async (e: FormEvent) => {
           anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
         />
       </Box>
+
+      {/* How it works modal */}
+      <Dialog open={howItWorksOpen} onClose={() => setHowItWorksOpen(false)}>
+        <DialogTitle>How it works</DialogTitle>
+        <DialogContent>
+          <Typography gutterBottom>
+            This platform lets you automate complex research and knowledge tasks using a multi-agent AI system. Select a task type, describe your goal, and the agents will plan, retrieve, and synthesize information from multiple sources. Results are streamed in real time.
+          </Typography>
+          <Typography variant="subtitle2">Examples:</Typography>
+          <ul>
+            <li>Market Research: "Compare Company A and Company B on recent news and financials."</li>
+            <li>Literature Review: "Summarize recent research on quantum computing."</li>
+            <li>News Aggregation: "What are the latest trends in renewable energy?"</li>
+          </ul>
+        </DialogContent>
+      </Dialog>
 
       <style>{`
         @keyframes fadeIn {
